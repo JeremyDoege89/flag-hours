@@ -38,13 +38,18 @@ Resume point for any session. Plan: [PLAN.md](PLAN.md). Gate: `./gradlew testDeb
   enforced locally, 401/429/offline handled; range badge (green in range, yellow below, blue above) with
   attribution. Parsers tolerate small response-shape changes. Tested with a fake HTTP interceptor.
 
+- README (build + sideload), CI green (runner's preinstalled SDK + platform 37.2), debug APK attached to the
+  v0.1.0 GitHub pre-release.
+
 ## In progress
-- README, CI green, final polish.
+- Nothing. Waiting on milestone 7 feedback.
 
 ## Next
 - Milestone 7: Jeremy daily-drives the app and reports issues.
 
 ## Known issues / decisions
+- Debug APK is ~69 MB (bundled ML Kit OCR model + extended icons, no R8 in debug). A signed, minified release build would be much smaller.
+- No Room migrations yet (schema v1); any entity change needs a migration before users have data.
 - Open Labor Project response shape was not verifiable from here (no key); the parser accepts `hours/low/high/confidence`
   at top level or under `data`/`results`/`range`, and common alternative key names. Adjust `VehicleApiParsers.parseOlp` once a real response is seen.
 - No KVM on the build machine, so no emulator; UI is smoke-tested with Robolectric Compose tests instead.
