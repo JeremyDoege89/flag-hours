@@ -28,8 +28,13 @@ Resume point for any session. Plan: [PLAN.md](PLAN.md). Gate: `./gradlew testDeb
   stubs and pay plan JSON; Settings > Share backup / Save to file (SAF) / Restore (replace all, with counts
   confirmation). Round-trip tested in domain and repository. Photos aren't included.
 
+- M8 RO scan: CameraX preview + capture (torch toggle), or pick a photo; bundled ML Kit text recognition (offline);
+  OCR lines regrouped into visual rows; `RoTextParser` (RO#, VIN with OCR fixes + check digit, year/make/model,
+  labor lines with hours + labor type) with tests; result opens the editable New RO draft; manual entry always
+  available; photo kept with the RO (thumbnail + full view, deleted with the RO).
+
 ## In progress
-- M8 RO scan (CameraX + ML Kit + RoTextParser).
+- M9 NHTSA vPIC VIN decode + Open Labor Project reference lookup.
 
 ## Next
 - M8 scan, M9 VIN decode + labor reference lookup, README.

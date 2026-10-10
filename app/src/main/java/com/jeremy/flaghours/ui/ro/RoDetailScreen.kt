@@ -40,7 +40,6 @@ import com.jeremy.flaghours.ui.common.app
 import com.jeremy.flaghours.ui.common.onMain
 import com.jeremy.flaghours.ui.common.fmtDate
 import com.jeremy.flaghours.ui.common.hrs
-import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
 
 @Composable
@@ -127,6 +126,7 @@ fun RoHeader(r: RepairOrder, plan: PayPlan, extra: @Composable () -> Unit = {}) 
             if (r.vehicleLabel.isNotBlank()) Text(r.vehicleLabel + (r.engine?.let { " · $it" } ?: ""))
             r.vin?.let { Text("VIN $it", style = MaterialTheme.typography.bodyMedium) }
             r.notes?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
+            r.photoUri?.let { RoPhoto(it) }
             extra()
         }
     }

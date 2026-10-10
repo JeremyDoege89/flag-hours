@@ -61,6 +61,7 @@ class FlagHoursRepository(
     suspend fun deleteRo(ro: RepairOrder) = db.withTransaction {
         db.jobs().forRo(ro.id).forEach { db.jobs().clearComebackRefs(it.id) }
         db.repairOrders().delete(ro)
+        ro.photoUri?.let { runCatching { java.io.File(java.net.URI(it)).delete() } }
     }
 
     /** Creates an RO with its jobs in one transaction (used by manual entry and scan). */
