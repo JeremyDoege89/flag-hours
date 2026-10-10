@@ -115,6 +115,11 @@ class FlagHoursRepository(
         db.jobs().update(job.copy(paidPeriodStart = periodStart))
     }
 
+    suspend fun saveJobReference(jobId: Long, low: Int?, high: Int?, confidence: String?) {
+        val job = db.jobs().get(jobId) ?: return
+        db.jobs().update(job.copy(refLowHundredths = low, refHighHundredths = high, refConfidence = confidence))
+    }
+
     /** Writes a job exactly as given (used by undo). */
     suspend fun restoreJob(job: Job) = db.jobs().update(job)
 

@@ -30,6 +30,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.jeremy.flaghours.data.db.Job
 import com.jeremy.flaghours.data.db.RepairOrder
+import com.jeremy.flaghours.data.remote.LookupResult
+import com.jeremy.flaghours.data.remote.VehicleService
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.TextButton
 import com.jeremy.flaghours.domain.JobStatus
 import com.jeremy.flaghours.domain.PayCalculator
 import com.jeremy.flaghours.domain.PayPlan
@@ -44,7 +48,12 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun RoDetailScreen(roId: Long, onBack: () -> Unit, onEditRo: (Long) -> Unit) {
-    val repo = app().repository
+    val application = app()
+    val repo = application.repository
+    val vehicles = application.vehicles
+    val apiKey by application.secrets.olpApiKey.collectAsState()
+    val snackbar = remember { SnackbarHostState() }
+    var busy by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val ro by remember(roId) { repo.observeRo(roId) }.collectAsState(initial = null)
     val jobs by remember(roId) { repo.observeJobsForRo(roId) }.collectAsState(initial = emptyList())
@@ -58,9 +67,38 @@ fun RoDetailScreen(roId: Long, onBack: () -> Unit, onEditRo: (Long) -> Unit) {
     }
     val byId = allJobs.associate { it.job.id to it.toLine() }
 
+    val canLookUp = !apiKey.isNullOrBlank() && r.make != null && r.model != null && r.year != null
+    fun lookUp(job: Job) {
+        busy = "job${job.id}"
+        scope.launch {
+            when (val res = vehicles.laborReference(r.make!!, r.model!!, r.year!!, r.engine, job.description)) {
+                is LookupResult.Found -> repo.saveJobReference(job.id, res.value.lowHundredths, res.value.highHundredths, res.value.confidence)
+                LookupResult.NotFound -> snackbar.showSnackbar("No reference time found for \"${job.description}\".")
+                is LookupResult.Failed -> snackbar.showSnackbar(res.message)
+            }
+            busy = null
+        }
+    }
+    fun decodeVin(vin: String) {
+        busy = "vin"
+        scope.launch {
+            when (val res = vehicles.decodeVin(vin)) {
+                is LookupResult.Found -> {
+                    val v = res.value
+                    repo.saveRo(r.copy(year = v.year ?: r.year, make = v.make ?: r.make, model = v.model ?: r.model, engine = v.engine ?: r.engine))
+                    snackbar.showSnackbar("Vehicle filled in from the VIN")
+                }
+                LookupResult.NotFound -> snackbar.showSnackbar("NHTSA couldn't decode that VIN. Check it against the RO.")
+                is LookupResult.Failed -> snackbar.showSnackbar(res.message)
+            }
+            busy = null
+        }
+    }
+
     ScreenScaffold(
         title = "RO ${r.roNumber}",
         onBack = onBack,
+        snackbar = snackbar,
         actions = {
             IconButton(onClick = { onEditRo(r.id) }) { Icon(Icons.Default.Edit, "Edit RO") }
             IconButton(onClick = { confirmDelete = true }) { Icon(Icons.Default.Delete, "Delete RO") }
@@ -78,7 +116,16 @@ fun RoDetailScreen(roId: Long, onBack: () -> Unit, onEditRo: (Long) -> Unit) {
             contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp, 16.dp, 16.dp, 96.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            item { RoHeader(r, plan) }
+            item {
+                RoHeader(r, plan) {
+                    val vin = r.vin
+                    if (vin != null && vin.length == 17) {
+                        TextButton(onClick = { decodeVin(vin) }, enabled = busy != "vin") {
+                            Text(if (busy == "vin") "Decoding VIN…" else "Fill vehicle from VIN (NHTSA)")
+                        }
+                    }
+                }
+            }
             if (jobs.isEmpty()) item { Text("No labor lines yet. Tap Add line.") }
             items(jobs, key = { it.id }) { job ->
                 JobCard(
@@ -87,7 +134,11 @@ fun RoDetailScreen(roId: Long, onBack: () -> Unit, onEditRo: (Long) -> Unit) {
                     plan = plan,
                     onClick = { editing = job },
                     onStatus = { s -> scope.launch { repo.setJobStatus(job.id, s) } },
+                    badge = { ReferenceBadge(job, plan.decimals, canLookUp, busy == "job${job.id}", onLookUp = { lookUp(job) }) },
                 )
+            }
+            if (canLookUp || jobs.any { it.refLowHundredths != null || it.refHighHundredths != null }) {
+                item { Text(VehicleService.ATTRIBUTION, style = MaterialTheme.typography.bodySmall) }
             }
             item {
                 val total = jobs.sumOf { PayCalculator.myShare(it.toLine(r.roNumber), plan, byId) }

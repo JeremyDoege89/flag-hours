@@ -33,13 +33,20 @@ Resume point for any session. Plan: [PLAN.md](PLAN.md). Gate: `./gradlew testDeb
   labor lines with hours + labor type) with tests; result opens the editable New RO draft; manual entry always
   available; photo kept with the RO (thumbnail + full view, deleted with the RO).
 
+- M9 VIN decode via NHTSA vPIC (no key) fills year/make/model/engine on the RO; Open Labor Project lookup per
+  line with the user's own key (stored encrypted), cache-first in LaborRefCache (misses cached too), 10/day limit
+  enforced locally, 401/429/offline handled; range badge (green in range, yellow below, blue above) with
+  attribution. Parsers tolerate small response-shape changes. Tested with a fake HTTP interceptor.
+
 ## In progress
-- M9 NHTSA vPIC VIN decode + Open Labor Project reference lookup.
+- README, CI green, final polish.
 
 ## Next
-- M8 scan, M9 VIN decode + labor reference lookup, README.
+- Milestone 7: Jeremy daily-drives the app and reports issues.
 
 ## Known issues / decisions
+- Open Labor Project response shape was not verifiable from here (no key); the parser accepts `hours/low/high/confidence`
+  at top level or under `data`/`results`/`range`, and common alternative key names. Adjust `VehicleApiParsers.parseOlp` once a real response is seen.
 - No KVM on the build machine, so no emulator; UI is smoke-tested with Robolectric Compose tests instead.
 - Semi-monthly periods are fixed at 1st–15th and 16th–end of month (periodStartDay ignored).
 - Guarantee top-up compares guarantee hours with *flag* hours paid (hourly entries are not counted toward it).
