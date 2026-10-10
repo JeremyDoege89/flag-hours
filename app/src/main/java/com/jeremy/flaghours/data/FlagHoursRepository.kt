@@ -102,6 +102,12 @@ class FlagHoursRepository(
         db.jobs().update(job.copy(status = JobStatus.PAID, paidPeriodStart = periodStart))
     }
 
+    /** Moves a job's paid period without changing its status. */
+    suspend fun movePaidPeriod(jobId: Long, periodStart: LocalDate) {
+        val job = db.jobs().get(jobId) ?: return
+        db.jobs().update(job.copy(paidPeriodStart = periodStart))
+    }
+
     /** Writes a job exactly as given (used by undo). */
     suspend fun restoreJob(job: Job) = db.jobs().update(job)
 

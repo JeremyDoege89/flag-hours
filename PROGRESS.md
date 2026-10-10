@@ -20,8 +20,12 @@ Resume point for any session. Plan: [PLAN.md](PLAN.md). Gate: `./gradlew testDeb
 - Robolectric Compose smoke tests (`ui/SmokeTest`) walk setup → dashboard → clock → tabs → settings, and create an RO.
   They caught a real bug (navigation after a suspend save ran off the main thread) — fixed with `onMain`.
 
+- M5 Paycheck screen: defaults to the period that just ended; stub hours + optional gross saved per period;
+  recorded breakdown; gap card; reconciler explanations with one-tap fixes (mark paid this period / move to next
+  period / open RO).
+
 ## In progress
-- M5 Paycheck stub + reconciler UI.
+- M6 CSV export/import.
 
 ## Next
 - M3 wizard + settings + RO/job entry + jobs list, M4 time + dashboard, M5 paycheck, M6 CSV, M8 scan, M9 VIN/labor lookup.
