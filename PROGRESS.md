@@ -24,11 +24,15 @@ Resume point for any session. Plan: [PLAN.md](PLAN.md). Gate: `./gradlew testDeb
   recorded breakdown; gap card; reconciler explanations with one-tap fixes (mark paid this period / move to next
   period / open RO).
 
+- M6 CSV backup: one-file typed-row CSV (`domain/Csv`, `domain/CsvExporter`) with ROs, jobs, shifts, hourly,
+  stubs and pay plan JSON; Settings > Share backup / Save to file (SAF) / Restore (replace all, with counts
+  confirmation). Round-trip tested in domain and repository. Photos aren't included.
+
 ## In progress
-- M6 CSV export/import.
+- M8 RO scan (CameraX + ML Kit + RoTextParser).
 
 ## Next
-- M3 wizard + settings + RO/job entry + jobs list, M4 time + dashboard, M5 paycheck, M6 CSV, M8 scan, M9 VIN/labor lookup.
+- M8 scan, M9 VIN decode + labor reference lookup, README.
 
 ## Known issues / decisions
 - No KVM on the build machine, so no emulator; UI is smoke-tested with Robolectric Compose tests instead.

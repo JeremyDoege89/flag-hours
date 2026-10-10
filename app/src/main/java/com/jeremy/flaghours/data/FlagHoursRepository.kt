@@ -9,6 +9,12 @@ import com.jeremy.flaghours.data.db.PayStub
 import com.jeremy.flaghours.data.db.RepairOrder
 import com.jeremy.flaghours.data.db.Shift
 import com.jeremy.flaghours.data.settings.PayPlanStore
+import com.jeremy.flaghours.data.settings.PlanJson
+import com.jeremy.flaghours.domain.Backup
+import com.jeremy.flaghours.domain.BackupJob
+import com.jeremy.flaghours.domain.BackupRo
+import com.jeremy.flaghours.domain.BackupStub
+import com.jeremy.flaghours.domain.CsvExporter
 import com.jeremy.flaghours.domain.FlagsPayWhen
 import com.jeremy.flaghours.domain.JobStatus
 import com.jeremy.flaghours.domain.PaidPeriodPolicy
@@ -155,6 +161,54 @@ class FlagHoursRepository(
 
     fun summarize(snapshot: Snapshot, period: PayPeriod, plan: PayPlan): PaySummary =
         PayCalculator.summarize(period, snapshot.jobs, snapshot.shifts, snapshot.hourly, plan, now())
+
+    // --- Backup ---
+
+    suspend fun exportCsv(): String {
+        val ros = db.repairOrders().all()
+        val numbers = ros.associate { it.id to it.roNumber }
+        val backup = Backup(
+            ros = ros.map { BackupRo(it.id, it.roNumber, it.openedDate, it.vin, it.year, it.make, it.model, it.engine, it.notes) },
+            jobs = db.jobs().all().map { BackupJob(it.toLine(numbers[it.roId] ?: ""), it.refLowHundredths, it.refHighHundredths, it.refConfidence) },
+            shifts = db.shifts().all().map { it.toSpan() },
+            hourly = db.hourly().all().map { it.toWork() },
+            stubs = db.stubs().all().map { BackupStub(it.periodStart, it.hoursHundredths, it.grossCents) },
+            planJson = PlanJson.encodeToString(PayPlan.serializer(), planStore.current()),
+        )
+        return CsvExporter.export(backup)
+    }
+
+    /** Replaces everything with the backup's contents. Photos are not part of the backup. */
+    suspend fun replaceAllWith(b: Backup) {
+        db.withTransaction {
+            db.jobs().deleteAll()
+            db.repairOrders().deleteAll()
+            db.shifts().deleteAll()
+            db.hourly().deleteAll()
+            db.stubs().deleteAll()
+            b.ros.forEach {
+                db.repairOrders().insert(RepairOrder(it.id, it.roNumber, it.openedDate, it.vin, it.year, it.make, it.model, it.engine, null, it.notes))
+            }
+            val roById = b.ros.associateBy { it.id }
+            b.jobs.forEach { j ->
+                val l = j.line
+                db.jobs().insert(
+                    Job(
+                        l.id, l.roId, l.description, l.laborType, l.flaggedHundredths, l.adjustedHundredths, l.mySplitPct, l.workDate,
+                        l.status, l.paidPeriodStart, l.comebackOfJobId, j.refLowHundredths, j.refHighHundredths, j.refConfidence,
+                    ),
+                )
+                val ro = roById[l.roId]
+                db.templates().recordUse(l.description, ro?.make, ro?.model, l.flaggedHundredths)
+            }
+            b.shifts.forEach { db.shifts().insert(Shift(it.id, it.start, it.end)) }
+            b.hourly.forEach { db.hourly().insert(HourlyEntry(it.id, it.date, it.minutes, it.reason)) }
+            b.stubs.forEach { db.stubs().upsert(PayStub(it.periodStart, it.hoursHundredths, it.grossCents)) }
+        }
+        b.planJson?.let { json ->
+            runCatching { PlanJson.decodeFromString(PayPlan.serializer(), json) }.getOrNull()?.let { planStore.save(it.copy(setupComplete = true)) }
+        }
+    }
 
     // --- Pay stubs ---
 

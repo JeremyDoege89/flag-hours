@@ -129,4 +129,28 @@ class RepositoryTest {
         assertEquals(4150L, p.flagRateCents)
         assertEquals(true, p.setupComplete)
     }
+
+    @Test fun csvBackupRoundTrip() = runBlocking {
+        val roId = repo.createRoWithJobs(
+            RepairOrder(roNumber = "77", openedDate = LocalDate.parse("2026-10-06"), make = "Toyota", notes = "Rattle, front \"left\""),
+            listOf(Job(roId = 0, description = "Strut, front", flaggedHundredths = 210, workDate = LocalDate.parse("2026-10-06"))),
+        )
+        val original = db.jobs().forRo(roId).single()
+        repo.saveJob(Job(roId = roId, description = "Comeback", flaggedHundredths = 50, workDate = LocalDate.parse("2026-10-08"), comebackOfJobId = original.id))
+        repo.saveShift(Shift(start = LocalDateTime.parse("2026-10-06T07:00"), end = LocalDateTime.parse("2026-10-06T15:00")))
+        repo.saveHourly(HourlyEntry(date = LocalDate.parse("2026-10-07"), minutes = 45, reason = "Training"))
+        repo.saveStub(PayStub(LocalDate.parse("2026-10-05"), 260, 8450))
+        repo.savePlan(repo.currentPlan().copy(flagRateCents = 3325, setupComplete = true))
+
+        val csv = repo.exportCsv()
+        val jobsBefore = db.jobs().all()
+        repo.replaceAllWith(com.jeremy.flaghours.domain.CsvExporter.import(csv))
+        assertEquals(jobsBefore, db.jobs().all())
+        assertEquals("Rattle, front \"left\"", db.repairOrders().all().single().notes)
+        assertEquals(1, db.shifts().all().size)
+        assertEquals(45, db.hourly().all().single().minutes)
+        assertEquals(8450L, db.stubs().all().single().grossCents)
+        assertEquals(3325L, repo.currentPlan().flagRateCents)
+        assertEquals(csv, repo.exportCsv())
+    }
 }
