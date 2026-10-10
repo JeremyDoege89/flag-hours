@@ -12,7 +12,13 @@ import com.jeremy.flaghours.data.settings.PayPlanStore
 import com.jeremy.flaghours.domain.FlagsPayWhen
 import com.jeremy.flaghours.domain.JobStatus
 import com.jeremy.flaghours.domain.PaidPeriodPolicy
+import com.jeremy.flaghours.domain.PayCalculator
+import com.jeremy.flaghours.domain.PayPeriod
 import com.jeremy.flaghours.domain.PayPlan
+import com.jeremy.flaghours.domain.PaySummary
+import com.jeremy.flaghours.domain.HourlyWork
+import com.jeremy.flaghours.domain.JobLine
+import com.jeremy.flaghours.domain.ShiftSpan
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -39,6 +45,7 @@ class FlagHoursRepository(
     // --- Repair orders and jobs ---
 
     fun observeRo(id: Long) = db.repairOrders().observe(id)
+    suspend fun getRo(id: Long) = db.repairOrders().get(id)
     fun observeJobsForRo(roId: Long) = db.jobs().observeForRo(roId)
     suspend fun findRoByNumber(number: String) = db.repairOrders().findByNumber(number.trim())
 
@@ -95,6 +102,11 @@ class FlagHoursRepository(
         db.jobs().update(job.copy(status = JobStatus.PAID, paidPeriodStart = periodStart))
     }
 
+    /** Writes a job exactly as given (used by undo). */
+    suspend fun restoreJob(job: Job) = db.jobs().update(job)
+
+    suspend fun getJob(id: Long): Job? = db.jobs().get(id)
+
     suspend fun deleteJob(job: Job) = db.withTransaction {
         db.jobs().clearComebackRefs(job.id)
         db.jobs().delete(job)
@@ -126,9 +138,23 @@ class FlagHoursRepository(
 
     suspend fun deleteHourly(entry: HourlyEntry) = db.hourly().delete(entry)
 
+    // --- Calculation inputs ---
+
+    /** Current rows as pay-engine inputs. */
+    suspend fun snapshot(): Snapshot = Snapshot(
+        jobs = db.jobs().allWithRo().map { it.toLine() },
+        shifts = db.shifts().all().map { it.toSpan() },
+        hourly = db.hourly().all().map { it.toWork() },
+    )
+
+    fun summarize(snapshot: Snapshot, period: PayPeriod, plan: PayPlan): PaySummary =
+        PayCalculator.summarize(period, snapshot.jobs, snapshot.shifts, snapshot.hourly, plan, now())
+
     // --- Pay stubs ---
 
     fun observeStub(periodStart: LocalDate): Flow<PayStub?> = db.stubs().observe(periodStart)
     suspend fun saveStub(stub: PayStub) = db.stubs().upsert(stub)
     suspend fun deleteStub(stub: PayStub) = db.stubs().delete(stub)
 }
+
+data class Snapshot(val jobs: List<JobLine>, val shifts: List<ShiftSpan>, val hourly: List<HourlyWork>)
