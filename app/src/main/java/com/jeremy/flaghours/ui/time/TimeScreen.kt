@@ -106,7 +106,8 @@ fun TimeScreen(onSettings: () -> Unit) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Shifts", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
                     TextButton(onClick = {
-                        val start = period.start.atTime(8, 0).coerceAtMost(live.now)
+                        val day = live.now.toLocalDate().takeIf { it in period } ?: period.start
+                        val start = day.atTime(8, 0).coerceAtMost(live.now)
                         editingShift = Shift(start = start, end = start.plusHours(8))
                     }) {
                         Icon(Icons.Default.Add, null)

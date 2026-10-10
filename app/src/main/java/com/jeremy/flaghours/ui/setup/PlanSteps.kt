@@ -33,6 +33,7 @@ import com.jeremy.flaghours.ui.common.MoneyField
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.TextStyle
+import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 
 /** The seven pay-plan steps, shared by the first-launch wizard and Settings > Pay plan. */
@@ -85,19 +86,39 @@ private fun RatesStep(plan: PayPlan, onChange: (PayPlan) -> Unit) {
 
 @Composable
 private fun PeriodStep(plan: PayPlan, onChange: (PayPlan) -> Unit) {
-    ChoiceChips(PeriodType.entries, plan.period, { it.label }, { onChange(plan.copy(period = it)) })
+    fun anchorFor(day: Int, near: LocalDate = LocalDate.now()) =
+        near.with(TemporalAdjusters.previousOrSame(DayOfWeek.of(day.coerceIn(1, 7)))).toEpochDay()
+    ChoiceChips(PeriodType.entries, plan.period, { it.label }, { type ->
+        onChange(
+            if (type == PeriodType.BIWEEKLY && plan.biweeklyAnchorEpochDay == null) {
+                plan.copy(period = type, biweeklyAnchorEpochDay = anchorFor(plan.periodStartDay))
+            } else {
+                plan.copy(period = type)
+            },
+        )
+    })
     if (plan.period != PeriodType.SEMI_MONTHLY) {
         Text("Period starts on", style = MaterialTheme.typography.labelLarge)
         ChoiceChips(
             DayOfWeek.entries,
             DayOfWeek.of(plan.periodStartDay.coerceIn(1, 7)),
             { it.getDisplayName(TextStyle.SHORT, Locale.getDefault()) },
-            { onChange(plan.copy(periodStartDay = it.value)) },
+            { dow ->
+                onChange(
+                    if (plan.period == PeriodType.BIWEEKLY) {
+                        val near = plan.biweeklyAnchorEpochDay?.let { LocalDate.ofEpochDay(it) } ?: LocalDate.now()
+                        plan.copy(periodStartDay = dow.value, biweeklyAnchorEpochDay = anchorFor(dow.value, near))
+                    } else {
+                        plan.copy(periodStartDay = dow.value)
+                    },
+                )
+            },
         )
     }
     if (plan.period == PeriodType.BIWEEKLY) {
-        val anchor = plan.biweeklyAnchorEpochDay?.let { LocalDate.ofEpochDay(it) } ?: LocalDate.now()
+        val anchor = LocalDate.ofEpochDay(plan.biweeklyAnchorEpochDay ?: anchorFor(plan.periodStartDay))
         DateField(anchor, { onChange(plan.copy(biweeklyAnchorEpochDay = it.toEpochDay(), periodStartDay = it.dayOfWeek.value)) }, "First day of a current or past period")
+        Text("Pick the first day of any pay period, e.g. the start date on your last stub.", style = MaterialTheme.typography.bodyMedium)
     }
 }
 
