@@ -15,6 +15,8 @@ camerax = "1.6.2"
 mlkitText = "16.0.1"
 okhttp = "5.5.0"
 junit = "4.13.2"
+robolectric = "4.17"
+androidxTestCore = "1.7.0"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -42,6 +44,8 @@ camerax-view = { module = "androidx.camera:camera-view", version.ref = "camerax"
 mlkit-text = { module = "com.google.mlkit:text-recognition", version.ref = "mlkitText" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 junit = { module = "junit:junit", version.ref = "junit" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTestCore" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

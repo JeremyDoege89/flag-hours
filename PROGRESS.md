@@ -7,8 +7,11 @@ Resume point for any session. Plan: [PLAN.md](PLAN.md). Gate: `./gradlew testDeb
   - compileSdk is **37.2** (current AndroidX/Compose/OkHttp require it); targetSdk stays 36, minSdk 26.
 - M1 pay engine (pure Kotlin, `domain/`): Units, Models, PayPlan, PayPeriod, PaidPeriodPolicy, PayCalculator, Reconciler + tests.
 
+- M2 data layer: Room entities/DAOs/converters (schema exported to app/schemas), PayPlanStore (DataStore + kotlinx.serialization),
+  SecretStore (Android Keystore AES-GCM), FlagHoursRepository; Robolectric repository tests.
+
 ## In progress
-- M2 Room DB / DAOs / repositories.
+- M3 UI: navigation, wizard, settings pay plan, RO/job entry, jobs list.
 
 ## Next
 - M3 wizard + settings + RO/job entry + jobs list, M4 time + dashboard, M5 paycheck, M6 CSV, M8 scan, M9 VIN/labor lookup.
