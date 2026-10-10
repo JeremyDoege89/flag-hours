@@ -41,6 +41,7 @@ import com.jeremy.flaghours.ui.common.DateField
 import com.jeremy.flaghours.ui.common.HoursField
 import com.jeremy.flaghours.ui.common.ScreenScaffold
 import com.jeremy.flaghours.ui.common.app
+import com.jeremy.flaghours.ui.common.onMain
 import kotlinx.coroutines.launch
 
 /**
@@ -85,10 +86,10 @@ fun RoEditScreen(roId: Long, fromDraft: Boolean, onBack: () -> Unit, onSaved: (L
                     return@launch
                 }
                 val id = repo.createRoWithJobs(d.toRepairOrder(), d.toJobs(repo.today()))
-                onSaved(id)
+                onMain { onSaved(id) }
             } else {
                 repo.saveRo(d.toRepairOrder(roId).copy(photoUri = existing?.photoUri ?: d.photoUri))
-                onSaved(roId)
+                onMain { onSaved(roId) }
             }
         }
     }

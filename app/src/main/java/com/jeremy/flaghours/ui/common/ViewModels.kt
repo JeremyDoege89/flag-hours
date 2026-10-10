@@ -17,3 +17,6 @@ inline fun <reified VM : ViewModel> appViewModel(key: String? = null, crossinlin
     val a = app()
     return viewModel(key = key, factory = viewModelFactory { initializer { create(a) } })
 }
+
+/** Run UI work (navigation, callbacks) on the main thread after a suspending save. */
+suspend fun onMain(block: () -> Unit) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main.immediate) { block() }

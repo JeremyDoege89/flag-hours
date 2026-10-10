@@ -37,6 +37,7 @@ import com.jeremy.flaghours.ui.common.ChoiceChips
 import com.jeremy.flaghours.ui.common.ConfirmDialog
 import com.jeremy.flaghours.ui.common.ScreenScaffold
 import com.jeremy.flaghours.ui.common.app
+import com.jeremy.flaghours.ui.common.onMain
 import com.jeremy.flaghours.ui.common.fmtDate
 import com.jeremy.flaghours.ui.common.hrs
 import kotlinx.coroutines.flow.emptyFlow
@@ -112,7 +113,7 @@ fun RoDetailScreen(roId: Long, onBack: () -> Unit, onEditRo: (Long) -> Unit) {
             "Delete RO ${r.roNumber}?",
             "This deletes the RO and all ${jobs.size} of its lines. This can't be undone.",
             "Delete",
-            onConfirm = { scope.launch { repo.deleteRo(r); onBack() } },
+            onConfirm = { scope.launch { repo.deleteRo(r); onMain(onBack) } },
             onDismiss = { confirmDelete = false },
         )
     }

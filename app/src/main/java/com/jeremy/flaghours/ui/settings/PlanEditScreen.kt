@@ -29,6 +29,7 @@ import com.jeremy.flaghours.ui.common.BigButton
 import com.jeremy.flaghours.ui.common.ScreenScaffold
 import com.jeremy.flaghours.ui.common.SectionCard
 import com.jeremy.flaghours.ui.common.app
+import com.jeremy.flaghours.ui.common.onMain
 import com.jeremy.flaghours.ui.common.fmtPeriod
 import com.jeremy.flaghours.ui.common.money
 import com.jeremy.flaghours.ui.setup.PlanStep
@@ -98,7 +99,7 @@ fun PlanEditScreen(onBack: () -> Unit) {
                     scope.launch {
                         repo.savePlan(d.copy(setupComplete = true))
                         preview = null
-                        onBack()
+                        onMain(onBack)
                     }
                 }) { Text("Save") }
             },

@@ -15,8 +15,13 @@ Resume point for any session. Plan: [PLAN.md](PLAN.md). Gate: `./gradlew testDeb
   full-screen job editor (adjusted hours, split, comeback picker, paid-period override), jobs list with
   status/period filters and swipe-to-mark-paid with Undo, JobTemplate autocomplete chips.
 
+- M4 Time screen (big clock in/out, shifts per period with date+time editing, forgotten clock-out fix after 14 h,
+  hourly entries) and Dashboard (worked/paid/owed, clocked, efficiency, est. gross, expandable math, clock card).
+- Robolectric Compose smoke tests (`ui/SmokeTest`) walk setup → dashboard → clock → tabs → settings, and create an RO.
+  They caught a real bug (navigation after a suspend save ran off the main thread) — fixed with `onMain`.
+
 ## In progress
-- M4 Time screen + Dashboard.
+- M5 Paycheck stub + reconciler UI.
 
 ## Next
 - M3 wizard + settings + RO/job entry + jobs list, M4 time + dashboard, M5 paycheck, M6 CSV, M8 scan, M9 VIN/labor lookup.

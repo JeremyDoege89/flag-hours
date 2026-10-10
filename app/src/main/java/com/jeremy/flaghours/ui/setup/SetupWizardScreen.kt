@@ -30,6 +30,7 @@ import com.jeremy.flaghours.domain.PayPlan
 import com.jeremy.flaghours.ui.common.BigButton
 import com.jeremy.flaghours.ui.common.ScreenScaffold
 import com.jeremy.flaghours.ui.common.app
+import com.jeremy.flaghours.ui.common.onMain
 import kotlinx.coroutines.launch
 
 @Composable
@@ -47,7 +48,7 @@ fun SetupWizardScreen(onDone: () -> Unit) {
     fun finish(final: PayPlan) {
         scope.launch {
             repo.savePlan(final.copy(setupComplete = true))
-            onDone()
+            onMain(onDone)
         }
     }
 
