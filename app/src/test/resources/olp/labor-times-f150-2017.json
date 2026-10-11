@@ -1,0 +1,11 @@
+{"data":[
+ {"job":"Radiator","jobSlug":"radiator","category":"Cooling System","hours":2.1,"lowRange":1.8,"highRange":2.6,"confidence":"high","engine":"3.5l-v6-ecoboost"},
+ {"job":"Radiator","jobSlug":"radiator","category":"Cooling System","hours":1.9,"lowRange":1.6,"highRange":2.3,"confidence":"high","engine":"5.0l-v8"},
+ {"job":"Radiator Cap","jobSlug":"radiator-cap","category":"Cooling System","hours":0.1,"lowRange":0.1,"highRange":0.2,"confidence":"estimated","engine":"3.5l-v6-ecoboost"},
+ {"job":"Radiator Hose - Lower","jobSlug":"radiator-hose-lower","category":"Cooling System","hours":0.8,"lowRange":0.6,"highRange":1.0,"confidence":"high","engine":"3.5l-v6-ecoboost"},
+ {"job":"Thermostat","jobSlug":"thermostat","category":"Cooling System","hours":1.2,"lowRange":1.0,"highRange":1.5,"confidence":"oem_verified","engine":"3.5l-v6-ecoboost"},
+ {"job":"Water Pump","jobSlug":"water-pump","category":"Cooling System","hours":5.6,"lowRange":4.9,"highRange":6.4,"confidence":"high","engine":"3.5l-v6-ecoboost"},
+ {"job":"Brake Pads - Front","jobSlug":"brake-pads-front","category":"Brakes","hours":1.0,"lowRange":0.8,"highRange":1.3,"confidence":"high","engine":"3.5l-v6-ecoboost"},
+ {"job":"Brake Rotors - Front Pair","jobSlug":"brake-rotors-front-pair","category":"Brakes","hours":1.4,"lowRange":1.1,"highRange":1.7,"confidence":"high","engine":"3.5l-v6-ecoboost"},
+ {"job":"Alternator","jobSlug":"alternator","category":"Electrical","hours":1.3,"lowRange":1.0,"highRange":1.6,"confidence":"estimated","engine":"3.5l-v6-ecoboost"}
+],"meta":{"make":"ford","model":"f-150","year":"2017","count":9},"error":null}

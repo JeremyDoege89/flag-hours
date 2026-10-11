@@ -3,6 +3,8 @@ package com.jeremy.flaghours
 import android.app.Application
 import com.jeremy.flaghours.data.FlagHoursRepository
 import com.jeremy.flaghours.data.db.FlagHoursDatabase
+import com.jeremy.flaghours.data.remote.OlpDebugLog
+import com.jeremy.flaghours.data.remote.OlpService
 import com.jeremy.flaghours.data.remote.VehicleService
 import com.jeremy.flaghours.data.settings.PayPlanStore
 import com.jeremy.flaghours.data.settings.SecretStore
@@ -14,7 +16,9 @@ class FlagHoursApp : Application() {
     val planStore by lazy { PayPlanStore.create(this) }
     val secrets by lazy { SecretStore(this) }
     val repository by lazy { FlagHoursRepository(database, planStore) }
-    val vehicles by lazy { VehicleService(database.laborRefs(), apiKey = { secrets.olpApiKey.value }) }
+    val vehicles by lazy { VehicleService() }
+    val olpLog by lazy { OlpDebugLog(java.io.File(filesDir, "logs/olp-debug.log")) }
+    val olp by lazy { OlpService(database.olp(), apiKey = { secrets.olpApiKey.value }, log = olpLog) }
 
     /** Hand-off from the scan screen to the RO editor. */
     var pendingDraft: RoDraft? = null

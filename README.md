@@ -23,8 +23,13 @@ labor-time reference) are only used when you tap them.
 - **Scan RO**: camera or photo, read by on-device OCR (ML Kit, offline). The app finds the RO number, VIN, vehicle and labor lines,
   and opens them as an editable draft before saving. You can always enter the RO by hand instead.
 - **VIN decode** via NHTSA vPIC (no key needed).
-- **Labor-time reference** (optional) via Open Labor Project, using your own API key (stored encrypted). Results are cached
-  and the free tier's 10 lookups a day is respected. Each line gets a badge: green means in range, yellow below, blue above.
+- **Labor-time reference** (optional) via Open Labor Project, using your own API key (stored encrypted). One lookup loads
+  every job for a vehicle (a couple more the first time for a make), and job matching then happens on the phone:
+  "R&R radiator" or "replace rad" both find "Radiator". Pick a match once and it's remembered. You can browse all jobs by
+  category, and lines are matched automatically when the match is clear. Each line gets a badge: green means in range,
+  yellow below, blue above. Errors say exactly what went wrong (no key, bad key, daily limit with reset time, vehicle
+  not in the catalog with the names tried). See [docs/olp-api.md](docs/olp-api.md).
+- **VIN barcode scan** on the RO screen (ML Kit, offline). A VIN fills year/make/model/engine from NHTSA when the RO is saved.
 - **CSV backup**: share or save one CSV file with everything, and restore from it.
 
 Hours are stored as integer hundredths (1.6 h = 160) and money as integer cents. Pay math never uses floating point.
@@ -49,8 +54,8 @@ CI (GitHub Actions) runs the same command on every push and uploads the debug AP
 ## Install on your phone
 
 **From GitHub (no cable):**
-1. If an older Flag Hours, or any test build with the same name, is on the phone, **uninstall it first**. Android refuses to
-   update an app that was signed with a different key and only says "package appears to be invalid".
+1. Coming from 0.1.1 or later: just install over it, and your data stays. Coming from the 0.1.0 debug build or another test
+   build: **uninstall it first**. Android refuses to update an app signed with a different key and only says "package appears to be invalid".
 2. On the phone, open the latest release (signed in to GitHub) and download `flag-hours-<version>.apk`.
 3. Open it, allow installs from your browser or Files app when asked, then tap *Install*.
 4. Optional: check the file's SHA-256 against the one in the release notes.
@@ -64,7 +69,8 @@ Developer options), plug in, and run `adb install -r flag-hours-<version>.apk`.
 Signing reads `~/keystores/flag-hours.properties` (or the path in `FLAG_HOURS_SIGNING`) with `storeFile`, `storePassword`,
 `keyAlias` and `keyPassword`. The keystore and properties are never committed. **Back up `~/keystores`**: without that key,
 future versions can't be installed as updates and users would have to uninstall (losing data) to upgrade.
-If the properties file is missing, the release build is produced unsigned.
+If the properties file is missing, the release build is produced unsigned. Release APKs include ARM native libraries only
+(phones); debug builds keep x86 too for emulators.
 
 ## Project layout
 

@@ -80,6 +80,9 @@ interface JobTemplateDao {
     suspend fun find(description: String, make: String?, model: String?): JobTemplate?
 
     @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun insert(t: JobTemplate): Long
+
+    @Query("UPDATE job_templates SET refJobSlug = :slug WHERE description = :description AND make IS :make AND model IS :model")
+    suspend fun setRefJobSlug(description: String, make: String?, model: String?, slug: String?)
     @Update suspend fun update(t: JobTemplate)
 
     @Transaction
@@ -105,11 +108,27 @@ interface PayStubDao {
 }
 
 @Dao
-interface LaborRefDao {
-    @Query("SELECT * FROM labor_ref_cache WHERE make = :make AND model = :model AND year = :year AND engine = :engine AND jobSlug = :jobSlug")
-    suspend fun get(make: String, model: String, year: Int, engine: String, jobSlug: String): LaborRefCache?
+interface OlpDao {
+    @Query("SELECT * FROM olp_catalog WHERE `key` = :key") suspend fun catalog(key: String): OlpCatalog?
+    @Upsert suspend fun upsertCatalog(c: OlpCatalog)
 
-    @Upsert suspend fun upsert(row: LaborRefCache)
+    @Query("SELECT * FROM olp_vehicles WHERE vehicleKey = :key") suspend fun vehicle(key: String): OlpVehicle?
+    @Upsert suspend fun upsertVehicle(v: OlpVehicle)
 
-    @Query("SELECT COUNT(*) FROM labor_ref_cache WHERE fetchedAt >= :since") suspend fun fetchedSince(since: Long): Int
+    @Query("SELECT * FROM olp_vehicle_aliases WHERE aliasKey = :key") suspend fun alias(key: String): OlpVehicleAlias?
+    @Query("SELECT * FROM olp_vehicle_aliases WHERE aliasKey = :key") fun observeAlias(key: String): Flow<OlpVehicleAlias?>
+    @Upsert suspend fun upsertAlias(a: OlpVehicleAlias)
+    @Query("DELETE FROM olp_vehicle_aliases WHERE aliasKey = :key") suspend fun deleteAlias(key: String)
+
+    @Query("SELECT * FROM labor_rows WHERE vehicleKey = :key ORDER BY category, job") suspend fun rows(key: String): List<LaborRowEntity>
+    @Query("SELECT * FROM labor_rows WHERE vehicleKey = :key ORDER BY category, job") fun observeRows(key: String): Flow<List<LaborRowEntity>>
+    @Query("DELETE FROM labor_rows WHERE vehicleKey = :key") suspend fun deleteRows(key: String)
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun insertRows(rows: List<LaborRowEntity>)
+
+    @Transaction
+    suspend fun replaceVehicle(v: OlpVehicle, rows: List<LaborRowEntity>) {
+        deleteRows(v.vehicleKey)
+        insertRows(rows)
+        upsertVehicle(v)
+    }
 }

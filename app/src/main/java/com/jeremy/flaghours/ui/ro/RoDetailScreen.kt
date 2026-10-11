@@ -31,7 +31,13 @@ import androidx.compose.ui.unit.dp
 import com.jeremy.flaghours.data.db.Job
 import com.jeremy.flaghours.data.db.RepairOrder
 import com.jeremy.flaghours.data.remote.LookupResult
-import com.jeremy.flaghours.data.remote.VehicleService
+import com.jeremy.flaghours.data.remote.OlpService
+import com.jeremy.flaghours.data.remote.VehicleLoad
+import com.jeremy.flaghours.data.remote.VehicleQuery
+import com.jeremy.flaghours.domain.EngineMatcher
+import com.jeremy.flaghours.domain.JobMatcher
+import com.jeremy.flaghours.domain.LaborRow
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.TextButton
 import com.jeremy.flaghours.domain.JobStatus
@@ -54,6 +60,15 @@ fun RoDetailScreen(roId: Long, onBack: () -> Unit, onEditRo: (Long) -> Unit) {
     val apiKey by application.secrets.olpApiKey.collectAsState()
     val snackbar = remember { SnackbarHostState() }
     var busy by remember { mutableStateOf<String?>(null) }
+    val olp = application.olp
+    val quota by olp.quota.collectAsState()
+    var refState by remember { mutableStateOf<VehicleLoad?>(null) }
+    var refLoading by remember { mutableStateOf(false) }
+    var browseFor by remember { mutableStateOf<Job?>(null) }
+    var browseAll by remember { mutableStateOf(false) }
+    var manualPick by remember { mutableStateOf(false) }
+    var engineChoice by remember { mutableStateOf<VehicleLoad.ChooseEngine?>(null) }
+    val autoTried = remember { mutableSetOf<Long>() }
     val scope = rememberCoroutineScope()
     val ro by remember(roId) { repo.observeRo(roId) }.collectAsState(initial = null)
     val jobs by remember(roId) { repo.observeJobsForRo(roId) }.collectAsState(initial = emptyList())
@@ -67,18 +82,44 @@ fun RoDetailScreen(roId: Long, onBack: () -> Unit, onEditRo: (Long) -> Unit) {
     }
     val byId = allJobs.associate { it.job.id to it.toLine() }
 
-    val canLookUp = !apiKey.isNullOrBlank() && r.make != null && r.model != null && r.year != null
-    fun lookUp(job: Job) {
-        busy = "job${job.id}"
-        scope.launch {
-            when (val res = vehicles.laborReference(r.make!!, r.model!!, r.year!!, r.engine, job.description)) {
-                is LookupResult.Found -> repo.saveJobReference(job.id, res.value.lowHundredths, res.value.highHundredths, res.value.confidence)
-                LookupResult.NotFound -> snackbar.showSnackbar("No reference time found for \"${job.description}\".")
-                is LookupResult.Failed -> snackbar.showSnackbar(res.message)
-            }
-            busy = null
+    val query = r.year?.let { y ->
+        if (r.make.isNullOrBlank() || r.model.isNullOrBlank()) null
+        else VehicleQuery(y, r.make, r.model, r.engine?.let { EngineMatcher.displacement(it) }, r.engine?.let { EngineMatcher.cylinders(it) })
+    }
+    LaunchedEffect(query) { refState = query?.let { olp.cached(it) } }
+    val readyRows = (refState as? VehicleLoad.Ready)?.rows
+
+    fun handle(result: VehicleLoad) {
+        when (result) {
+            is VehicleLoad.ChooseEngine -> { engineChoice = result; refState = null }
+            else -> refState = result
         }
     }
+    fun loadRefs() {
+        val q = query ?: return
+        refLoading = true
+        scope.launch {
+            handle(olp.load(q))
+            refLoading = false
+        }
+    }
+    fun pick(job: Job, row: LaborRow) {
+        scope.launch { repo.applyReference(job.id, row) }
+    }
+
+    // Auto-match lines without a reference: remembered picks first, then clear-cut matches.
+    LaunchedEffect(readyRows, jobs) {
+        val rows = readyRows ?: return@LaunchedEffect
+        for (j in jobs) {
+            if (j.refJob != null || j.id in autoTried) continue
+            autoTried += j.id
+            val slug = repo.rememberedRefSlug(j.description, r.make, r.model)
+            val row = slug?.let { s -> rows.firstOrNull { it.jobSlug == s } }
+                ?: JobMatcher.match(j.description, rows).takeIf { JobMatcher.isConfident(it) }?.first()?.row
+            if (row != null) repo.applyReference(j.id, row, remember = slug == null)
+        }
+    }
+
     fun decodeVin(vin: String) {
         busy = "vin"
         scope.launch {
@@ -124,6 +165,20 @@ fun RoDetailScreen(roId: Long, onBack: () -> Unit, onEditRo: (Long) -> Unit) {
                             Text(if (busy == "vin") "Decoding VIN…" else "Fill vehicle from VIN (NHTSA)")
                         }
                     }
+                    LaborRefPanel(
+                        hasKey = !apiKey.isNullOrBlank(),
+                        vehicleLabel = query?.label,
+                        state = refState,
+                        loading = refLoading,
+                        quotaRemaining = quota.remaining,
+                        onLoad = ::loadRefs,
+                        onBrowse = { browseAll = true },
+                        onManual = { manualPick = true },
+                        onChangeEngine = {
+                            val st = refState as? VehicleLoad.Ready ?: return@LaborRefPanel
+                            engineChoice = VehicleLoad.ChooseEngine(st.vehicleKey, st.engines)
+                        },
+                    )
                 }
             }
             if (jobs.isEmpty()) item { Text("No labor lines yet. Tap Add line.") }
@@ -134,11 +189,18 @@ fun RoDetailScreen(roId: Long, onBack: () -> Unit, onEditRo: (Long) -> Unit) {
                     plan = plan,
                     onClick = { editing = job },
                     onStatus = { s -> scope.launch { repo.setJobStatus(job.id, s) } },
-                    badge = { ReferenceBadge(job, plan.decimals, canLookUp, busy == "job${job.id}", onLookUp = { lookUp(job) }) },
+                    badge = {
+                        JobReference(
+                            job, plan.decimals,
+                            suggestions = readyRows?.let { rows -> JobMatcher.match(job.description, rows) },
+                            onPick = { row -> pick(job, row) },
+                            onMore = { browseFor = job },
+                        )
+                    },
                 )
             }
-            if (canLookUp || jobs.any { it.refLowHundredths != null || it.refHighHundredths != null }) {
-                item { Text(VehicleService.ATTRIBUTION, style = MaterialTheme.typography.bodySmall) }
+            if (readyRows != null || jobs.any { it.refJob != null || it.refLowHundredths != null }) {
+                item { Text(OlpService.ATTRIBUTION, style = MaterialTheme.typography.bodySmall) }
             }
             item {
                 val total = jobs.sumOf { PayCalculator.myShare(it.toLine(r.roNumber), plan, byId) }
@@ -157,6 +219,49 @@ fun RoDetailScreen(roId: Long, onBack: () -> Unit, onEditRo: (Long) -> Unit) {
             onDelete = if (j.id != 0L) ({ scope.launch { repo.deleteJob(j); editing = null } }) else null,
             onDismiss = { editing = null },
         )
+    }
+    browseFor?.let { j ->
+        readyRows?.let { rows ->
+            JobBrowserSheet(rows, j.description, plan.decimals, "Typical time for \"${j.description}\"", onPick = { row -> pick(j, row); browseFor = null }, onDismiss = { browseFor = null })
+        }
+    }
+    if (browseAll) {
+        readyRows?.let { rows -> JobBrowserSheet(rows, "", plan.decimals, "All jobs for ${query?.label ?: "this vehicle"}", onPick = null, onDismiss = { browseAll = false }) }
+    }
+    (refState as? VehicleLoad.ChooseMake)?.let { c ->
+        OptionDialog("Which make?", "Not sure which catalog make matches (${c.tried}).", c.options.map { it.slug to it.name }, onPick = { slug ->
+            val q = query ?: return@OptionDialog
+            refState = null; refLoading = true
+            scope.launch { handle(olp.loadForMake(q, slug)); refLoading = false }
+        }, onDismiss = { refState = null })
+    }
+    (refState as? VehicleLoad.ChooseModel)?.let { c ->
+        OptionDialog("Which model?", "Pick the catalog model for ${query?.label} (tried ${c.tried}).", c.options.map { it.slug to it.name }, onPick = { slug ->
+            val q = query ?: return@OptionDialog
+            refState = null; refLoading = true
+            scope.launch { handle(olp.loadVehicle(q, c.makeSlug, slug)); refLoading = false }
+        }, onDismiss = { refState = null })
+    }
+    engineChoice?.let { c ->
+        OptionDialog("Which engine?", "This vehicle has several engines in the catalog.", c.options.map { it to it } + ("" to "Not sure (show all engines)"), onPick = { e ->
+            val q = query ?: return@OptionDialog
+            engineChoice = null
+            scope.launch { refState = olp.chooseEngine(q, c.vehicleKey, e) }
+        }, onDismiss = { engineChoice = null })
+    }
+    if (manualPick) {
+        ManualVehicleDialog(olp, r.year, onPicked = { year, make, model ->
+            manualPick = false
+            refLoading = true
+            scope.launch {
+                val updated = r.copy(year = year, make = r.make ?: make.name, model = r.model ?: model.name)
+                if (updated != r) repo.saveRo(updated)
+                val q = VehicleQuery(year, updated.make!!, updated.model!!, r.engine?.let { EngineMatcher.displacement(it) }, r.engine?.let { EngineMatcher.cylinders(it) })
+                olp.forget(q)
+                handle(olp.loadVehicle(q, make.slug, model.slug))
+                refLoading = false
+            }
+        }, onDismiss = { manualPick = false })
     }
     if (confirmDelete) {
         ConfirmDialog(

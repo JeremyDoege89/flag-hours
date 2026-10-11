@@ -53,6 +53,9 @@ data class Job(
     val refLowHundredths: Int? = null,
     val refHighHundredths: Int? = null,
     val refConfidence: String? = null,
+    /** Reference catalog job this line was matched to, e.g. "Radiator". */
+    val refJob: String? = null,
+    val refHoursHundredths: Int? = null,
 ) {
     fun toLine(roNumber: String = "") = JobLine(
         id = id,
@@ -111,6 +114,8 @@ data class JobTemplate(
     val model: String? = null,
     val flaggedHundredths: Int,
     val timesUsed: Int = 1,
+    /** Reference catalog job slug the user picked for this description (auto-applied next time). */
+    val refJobSlug: String? = null,
 )
 
 @Entity(tableName = "pay_stubs")
@@ -120,17 +125,46 @@ data class PayStub(
     val grossCents: Long? = null,
 )
 
-@Entity(tableName = "labor_ref_cache", primaryKeys = ["make", "model", "year", "engine", "jobSlug"])
-data class LaborRefCache(
-    val make: String,
-    val model: String,
+/** A vehicle whose reference labor times have been fetched (one call per vehicle). */
+@Entity(tableName = "olp_vehicles")
+data class OlpVehicle(
+    @PrimaryKey val vehicleKey: String,
+    val makeSlug: String,
+    val modelSlug: String,
     val year: Int,
+    val rowCount: Int,
+    val fetchedAt: Long,
+)
+
+/** Maps an RO's year/make/model text to a resolved catalog vehicle and the chosen engine. */
+@Entity(tableName = "olp_vehicle_aliases")
+data class OlpVehicleAlias(
+    @PrimaryKey val aliasKey: String,
+    val vehicleKey: String,
+    /** Chosen engine slug; null = not chosen yet, "" = use all rows. */
+    val engineSlug: String?,
+)
+
+/** Cached labor-time rows for a vehicle (all engines). */
+@Entity(tableName = "labor_rows", primaryKeys = ["vehicleKey", "engine", "jobSlug"], indices = [Index("vehicleKey")])
+data class LaborRowEntity(
+    val vehicleKey: String,
     val engine: String,
     val jobSlug: String,
     val job: String,
+    val category: String?,
     val hoursHundredths: Int?,
     val lowHundredths: Int?,
     val highHundredths: Int?,
     val confidence: String?,
+) {
+    fun toRow() = com.jeremy.flaghours.domain.LaborRow(job, jobSlug, category, hoursHundredths, lowHundredths, highHundredths, confidence, engine)
+}
+
+/** Cached /vehicles responses (makes list, models per make) as raw JSON. */
+@Entity(tableName = "olp_catalog")
+data class OlpCatalog(
+    @PrimaryKey val key: String,
+    val json: String,
     val fetchedAt: Long,
 )

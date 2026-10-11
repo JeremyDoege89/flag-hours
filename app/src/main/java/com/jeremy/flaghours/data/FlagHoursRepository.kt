@@ -24,6 +24,7 @@ import com.jeremy.flaghours.domain.PayPlan
 import com.jeremy.flaghours.domain.PaySummary
 import com.jeremy.flaghours.domain.HourlyWork
 import com.jeremy.flaghours.domain.JobLine
+import com.jeremy.flaghours.domain.LaborRow
 import com.jeremy.flaghours.domain.ShiftSpan
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
@@ -115,10 +116,30 @@ class FlagHoursRepository(
         db.jobs().update(job.copy(paidPeriodStart = periodStart))
     }
 
-    suspend fun saveJobReference(jobId: Long, low: Int?, high: Int?, confidence: String?) {
+    /** Attach a reference catalog job to a line, and remember the pick for this description + vehicle. */
+    suspend fun applyReference(jobId: Long, row: LaborRow, remember: Boolean = true) {
         val job = db.jobs().get(jobId) ?: return
-        db.jobs().update(job.copy(refLowHundredths = low, refHighHundredths = high, refConfidence = confidence))
+        db.jobs().update(
+            job.copy(
+                refJob = row.job, refHoursHundredths = row.hoursHundredths, refLowHundredths = row.lowHundredths ?: row.hoursHundredths,
+                refHighHundredths = row.highHundredths ?: row.hoursHundredths, refConfidence = row.confidence,
+            ),
+        )
+        if (remember) {
+            val ro = db.repairOrders().get(job.roId)
+            db.templates().recordUse(job.description, ro?.make, ro?.model, job.flaggedHundredths)
+            db.templates().setRefJobSlug(job.description.trim(), ro?.make, ro?.model, row.jobSlug)
+        }
     }
+
+    suspend fun clearReference(jobId: Long) {
+        val job = db.jobs().get(jobId) ?: return
+        db.jobs().update(job.copy(refJob = null, refHoursHundredths = null, refLowHundredths = null, refHighHundredths = null, refConfidence = null))
+    }
+
+    /** The catalog job slug previously picked for this description on this make/model (or any vehicle). */
+    suspend fun rememberedRefSlug(description: String, make: String?, model: String?): String? =
+        db.templates().find(description.trim(), make, model)?.refJobSlug ?: db.templates().find(description.trim(), null, null)?.refJobSlug
 
     /** Writes a job exactly as given (used by undo). */
     suspend fun restoreJob(job: Job) = db.jobs().update(job)

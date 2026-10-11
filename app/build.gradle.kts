@@ -17,8 +17,8 @@ android {
         applicationId = "com.jeremy.flaghours"
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
-        versionName = "0.1.1"
+        versionCode = 3
+        versionName = "0.2.0"
     }
 
     // Release signing comes from a properties file kept outside the repo (never committed).
@@ -45,12 +45,18 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            // Phones are ARM; x86 builds of the ML Kit native libraries are only useful on emulators.
+            ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             if (signing != null) signingConfig = signingConfigs.getByName("release")
         }
     }
     buildFeatures {
         compose = true
+    }
+    sourceSets {
+        // Room schemas as debug assets so the Robolectric migration test can read them (not in release).
+        getByName("debug").assets.srcDir("$projectDir/schemas")
     }
     testOptions {
         unitTests.isReturnDefaultValues = true
@@ -88,11 +94,13 @@ dependencies {
     implementation(libs.camerax.lifecycle)
     implementation(libs.camerax.view)
     implementation(libs.mlkit.text)
+    implementation(libs.mlkit.barcode)
     implementation(libs.okhttp)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)
+    testImplementation(libs.room.testing)
     testImplementation(libs.androidx.test.core)
     testImplementation(platform(libs.compose.bom))
     testImplementation(libs.compose.ui.test.junit4)

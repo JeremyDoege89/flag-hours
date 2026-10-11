@@ -1,0 +1,610 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 2,
+    "identityHash": "c1a7f825a3c39f33ff69372fc8f983e5",
+    "entities": [
+      {
+        "tableName": "repair_orders",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `roNumber` TEXT NOT NULL, `openedDate` INTEGER NOT NULL, `vin` TEXT, `year` INTEGER, `make` TEXT, `model` TEXT, `engine` TEXT, `photoUri` TEXT, `notes` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "roNumber",
+            "columnName": "roNumber",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "openedDate",
+            "columnName": "openedDate",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "vin",
+            "columnName": "vin",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "year",
+            "columnName": "year",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "make",
+            "columnName": "make",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "model",
+            "columnName": "model",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "engine",
+            "columnName": "engine",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "photoUri",
+            "columnName": "photoUri",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_repair_orders_roNumber",
+            "unique": false,
+            "columnNames": [
+              "roNumber"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_repair_orders_roNumber` ON `${TABLE_NAME}` (`roNumber`)"
+          }
+        ]
+      },
+      {
+        "tableName": "jobs",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `roId` INTEGER NOT NULL, `description` TEXT NOT NULL, `laborType` TEXT NOT NULL, `flaggedHundredths` INTEGER NOT NULL, `adjustedHundredths` INTEGER, `mySplitPct` INTEGER NOT NULL, `workDate` INTEGER NOT NULL, `status` TEXT NOT NULL, `paidPeriodStart` INTEGER, `comebackOfJobId` INTEGER, `refLowHundredths` INTEGER, `refHighHundredths` INTEGER, `refConfidence` TEXT, `refJob` TEXT, `refHoursHundredths` INTEGER, FOREIGN KEY(`roId`) REFERENCES `repair_orders`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "roId",
+            "columnName": "roId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "laborType",
+            "columnName": "laborType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "flaggedHundredths",
+            "columnName": "flaggedHundredths",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "adjustedHundredths",
+            "columnName": "adjustedHundredths",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "mySplitPct",
+            "columnName": "mySplitPct",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "workDate",
+            "columnName": "workDate",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "paidPeriodStart",
+            "columnName": "paidPeriodStart",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "comebackOfJobId",
+            "columnName": "comebackOfJobId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "refLowHundredths",
+            "columnName": "refLowHundredths",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "refHighHundredths",
+            "columnName": "refHighHundredths",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "refConfidence",
+            "columnName": "refConfidence",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "refJob",
+            "columnName": "refJob",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "refHoursHundredths",
+            "columnName": "refHoursHundredths",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_jobs_roId",
+            "unique": false,
+            "columnNames": [
+              "roId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_jobs_roId` ON `${TABLE_NAME}` (`roId`)"
+          },
+          {
+            "name": "index_jobs_workDate",
+            "unique": false,
+            "columnNames": [
+              "workDate"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_jobs_workDate` ON `${TABLE_NAME}` (`workDate`)"
+          },
+          {
+            "name": "index_jobs_paidPeriodStart",
+            "unique": false,
+            "columnNames": [
+              "paidPeriodStart"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_jobs_paidPeriodStart` ON `${TABLE_NAME}` (`paidPeriodStart`)"
+          },
+          {
+            "name": "index_jobs_status",
+            "unique": false,
+            "columnNames": [
+              "status"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_jobs_status` ON `${TABLE_NAME}` (`status`)"
+          },
+          {
+            "name": "index_jobs_comebackOfJobId",
+            "unique": false,
+            "columnNames": [
+              "comebackOfJobId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_jobs_comebackOfJobId` ON `${TABLE_NAME}` (`comebackOfJobId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "repair_orders",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "roId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "shifts",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `start` INTEGER NOT NULL, `end` INTEGER)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "start",
+            "columnName": "start",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "end",
+            "columnName": "end",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_shifts_start",
+            "unique": false,
+            "columnNames": [
+              "start"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_shifts_start` ON `${TABLE_NAME}` (`start`)"
+          }
+        ]
+      },
+      {
+        "tableName": "hourly_entries",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `date` INTEGER NOT NULL, `minutes` INTEGER NOT NULL, `reason` TEXT NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "date",
+            "columnName": "date",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "minutes",
+            "columnName": "minutes",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reason",
+            "columnName": "reason",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_hourly_entries_date",
+            "unique": false,
+            "columnNames": [
+              "date"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_hourly_entries_date` ON `${TABLE_NAME}` (`date`)"
+          }
+        ]
+      },
+      {
+        "tableName": "job_templates",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `description` TEXT NOT NULL, `make` TEXT, `model` TEXT, `flaggedHundredths` INTEGER NOT NULL, `timesUsed` INTEGER NOT NULL, `refJobSlug` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "make",
+            "columnName": "make",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "model",
+            "columnName": "model",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "flaggedHundredths",
+            "columnName": "flaggedHundredths",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timesUsed",
+            "columnName": "timesUsed",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "refJobSlug",
+            "columnName": "refJobSlug",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_job_templates_description_make_model",
+            "unique": true,
+            "columnNames": [
+              "description",
+              "make",
+              "model"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_job_templates_description_make_model` ON `${TABLE_NAME}` (`description`, `make`, `model`)"
+          }
+        ]
+      },
+      {
+        "tableName": "pay_stubs",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`periodStart` INTEGER NOT NULL, `hoursHundredths` INTEGER NOT NULL, `grossCents` INTEGER, PRIMARY KEY(`periodStart`))",
+        "fields": [
+          {
+            "fieldPath": "periodStart",
+            "columnName": "periodStart",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "hoursHundredths",
+            "columnName": "hoursHundredths",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "grossCents",
+            "columnName": "grossCents",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "periodStart"
+          ]
+        }
+      },
+      {
+        "tableName": "olp_vehicles",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`vehicleKey` TEXT NOT NULL, `makeSlug` TEXT NOT NULL, `modelSlug` TEXT NOT NULL, `year` INTEGER NOT NULL, `rowCount` INTEGER NOT NULL, `fetchedAt` INTEGER NOT NULL, PRIMARY KEY(`vehicleKey`))",
+        "fields": [
+          {
+            "fieldPath": "vehicleKey",
+            "columnName": "vehicleKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "makeSlug",
+            "columnName": "makeSlug",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "modelSlug",
+            "columnName": "modelSlug",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "year",
+            "columnName": "year",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rowCount",
+            "columnName": "rowCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fetchedAt",
+            "columnName": "fetchedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "vehicleKey"
+          ]
+        }
+      },
+      {
+        "tableName": "olp_vehicle_aliases",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`aliasKey` TEXT NOT NULL, `vehicleKey` TEXT NOT NULL, `engineSlug` TEXT, PRIMARY KEY(`aliasKey`))",
+        "fields": [
+          {
+            "fieldPath": "aliasKey",
+            "columnName": "aliasKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "vehicleKey",
+            "columnName": "vehicleKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "engineSlug",
+            "columnName": "engineSlug",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "aliasKey"
+          ]
+        }
+      },
+      {
+        "tableName": "labor_rows",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`vehicleKey` TEXT NOT NULL, `engine` TEXT NOT NULL, `jobSlug` TEXT NOT NULL, `job` TEXT NOT NULL, `category` TEXT, `hoursHundredths` INTEGER, `lowHundredths` INTEGER, `highHundredths` INTEGER, `confidence` TEXT, PRIMARY KEY(`vehicleKey`, `engine`, `jobSlug`))",
+        "fields": [
+          {
+            "fieldPath": "vehicleKey",
+            "columnName": "vehicleKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "engine",
+            "columnName": "engine",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "jobSlug",
+            "columnName": "jobSlug",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "job",
+            "columnName": "job",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "category",
+            "columnName": "category",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "hoursHundredths",
+            "columnName": "hoursHundredths",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "lowHundredths",
+            "columnName": "lowHundredths",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "highHundredths",
+            "columnName": "highHundredths",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "confidence",
+            "columnName": "confidence",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "vehicleKey",
+            "engine",
+            "jobSlug"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_labor_rows_vehicleKey",
+            "unique": false,
+            "columnNames": [
+              "vehicleKey"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_labor_rows_vehicleKey` ON `${TABLE_NAME}` (`vehicleKey`)"
+          }
+        ]
+      },
+      {
+        "tableName": "olp_catalog",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`key` TEXT NOT NULL, `json` TEXT NOT NULL, `fetchedAt` INTEGER NOT NULL, PRIMARY KEY(`key`))",
+        "fields": [
+          {
+            "fieldPath": "key",
+            "columnName": "key",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "json",
+            "columnName": "json",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fetchedAt",
+            "columnName": "fetchedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "key"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'c1a7f825a3c39f33ff69372fc8f983e5')"
+    ]
+  }
+}

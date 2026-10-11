@@ -183,3 +183,13 @@ object RoTextParser {
         if (w in setOf("bmw", "gmc", "ram", "mini")) w.uppercase() else w.replaceFirstChar { it.uppercase() }
     }.replace("Mercedes Benz", "Mercedes-Benz")
 }
+
+/** VIN from a barcode payload (Code 39/128, Data Matrix, QR). Import labels often prefix an extra "I". */
+fun vinFromBarcode(raw: String): String? {
+    val cleaned = raw.uppercase().filter { it.isLetterOrDigit() }
+    val candidates = buildList {
+        if (cleaned.length == 18 && cleaned.startsWith("I")) add(cleaned.drop(1))
+        for (i in 0..(cleaned.length - 17).coerceAtLeast(-1)) if (i >= 0) add(cleaned.substring(i, i + 17))
+    }.filter { v -> v.length == 17 && v.none { it in "IOQ" } && v.count(Char::isDigit) >= 5 }
+    return candidates.firstOrNull { RoTextParser.vinCheckDigitOk(it) } ?: candidates.firstOrNull()?.takeIf { cleaned.length in 17..18 }
+}

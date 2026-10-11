@@ -34,6 +34,9 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.jeremy.flaghours.data.db.RepairOrder
+import com.jeremy.flaghours.data.remote.LookupResult
+import com.jeremy.flaghours.ui.scan.VinBarcodeDialog
+import androidx.compose.material.icons.filled.QrCodeScanner
 import com.jeremy.flaghours.domain.LaborType
 import com.jeremy.flaghours.ui.common.BigButton
 import com.jeremy.flaghours.ui.common.ChoiceChips
@@ -57,6 +60,7 @@ fun RoEditScreen(roId: Long, fromDraft: Boolean, onBack: () -> Unit, onSaved: (L
     var existing by remember { mutableStateOf<RepairOrder?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     var duplicateId by remember { mutableStateOf<Long?>(null) }
+    var scanVin by remember { mutableStateOf(false) }
 
     LaunchedEffect(roId) {
         draft = when {
@@ -85,13 +89,24 @@ fun RoEditScreen(roId: Long, fromDraft: Boolean, onBack: () -> Unit, onSaved: (L
                     duplicateId = dup.id
                     return@launch
                 }
-                val id = repo.createRoWithJobs(d.toRepairOrder(), d.toJobs(repo.today()))
+                var ro = d.toRepairOrder()
+                // Fill the vehicle from the VIN (free NHTSA lookup) so reference times can be matched later.
+                if (ro.vin?.length == 17 && (ro.make == null || ro.model == null || ro.year == null)) {
+                    (application.vehicles.decodeVin(ro.vin!!) as? LookupResult.Found)?.value?.let { v ->
+                        ro = ro.copy(year = ro.year ?: v.year, make = ro.make ?: v.make, model = ro.model ?: v.model, engine = ro.engine ?: v.engine)
+                    }
+                }
+                val id = repo.createRoWithJobs(ro, d.toJobs(repo.today()))
                 onMain { onSaved(id) }
             } else {
                 repo.saveRo(d.toRepairOrder(roId).copy(photoUri = existing?.photoUri ?: d.photoUri))
                 onMain { onSaved(roId) }
             }
         }
+    }
+
+    if (scanVin) {
+        VinBarcodeDialog(onVin = { vin -> draft = d.copy(vin = vin); scanVin = false }, onDismiss = { scanVin = false })
     }
 
     ScreenScaffold(title = if (isNew) "New RO" else "Edit RO ${existing?.roNumber ?: ""}", onBack = onBack) { pad ->
@@ -112,6 +127,7 @@ fun RoEditScreen(roId: Long, fromDraft: Boolean, onBack: () -> Unit, onSaved: (L
                 d.vin, { draft = d.copy(vin = it.uppercase().filter { c -> c.isLetterOrDigit() }.take(17)) },
                 label = { Text("VIN (optional)") }, singleLine = true,
                 supportingText = { Text("${d.vin.length}/17") },
+                trailingIcon = { IconButton(onClick = { scanVin = true }) { Icon(Icons.Default.QrCodeScanner, "Scan VIN barcode") } },
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
                 modifier = Modifier.fillMaxWidth(),
             )

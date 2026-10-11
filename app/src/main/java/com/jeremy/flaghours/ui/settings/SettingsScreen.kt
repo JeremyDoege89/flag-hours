@@ -71,9 +71,12 @@ fun SettingsScreen(onBack: () -> Unit, onEditPlan: () -> Unit, onRerunSetup: () 
             SectionCard("Labor time reference (optional)") {
                 Text(
                     "Paste your own Open Labor Project API key to see typical labor-time ranges next to your flags. " +
-                        "The free tier allows 10 lookups a day; results are cached. The app works fully without a key.",
+                        "Each vehicle costs one lookup (a few more the first time for a make); after that every job on it is matched " +
+                        "on the phone for free. The free tier allows 10 lookups a day. The app works fully without a key.",
                     style = MaterialTheme.typography.bodyMedium,
                 )
+                val quota by application.olp.quota.collectAsState()
+                quota.remaining?.let { Text("$it lookups left today", style = MaterialTheme.typography.bodySmall) }
                 OutlinedTextField(
                     keyText, { keyText = it }, label = { Text("API key") }, singleLine = true,
                     visualTransformation = PasswordVisualTransformation(),
@@ -85,6 +88,29 @@ fun SettingsScreen(onBack: () -> Unit, onEditPlan: () -> Unit, onRerunSetup: () 
                     scope.launch { snackbar.showSnackbar(if (keyText.isBlank()) "API key removed" else "API key saved (encrypted)") }
                 }) { Text("Save key") }
                 Text("Labor reference data: Open Labor Project", style = MaterialTheme.typography.bodySmall)
+                val context = androidx.compose.ui.platform.LocalContext.current
+                androidx.compose.foundation.layout.Row {
+                    androidx.compose.material3.TextButton(onClick = {
+                        val f = application.olpLog.file
+                        if (!f.exists() || f.length() == 0L) {
+                            scope.launch { snackbar.showSnackbar("The lookup log is empty") }
+                        } else {
+                            val uri = androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", f)
+                            val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                                putExtra(android.content.Intent.EXTRA_SUBJECT, "Flag Hours lookup log")
+                                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            }
+                            context.startActivity(android.content.Intent.createChooser(send, "Share lookup log"))
+                        }
+                    }) { Text("Share lookup log") }
+                    androidx.compose.material3.TextButton(onClick = {
+                        application.olpLog.clear()
+                        scope.launch { snackbar.showSnackbar("Lookup log cleared") }
+                    }) { Text("Clear log") }
+                }
+                Text("The log keeps the last 40 raw responses (never your key) to help fix lookup problems.", style = MaterialTheme.typography.bodySmall)
             }
 
             SectionCard("About") {

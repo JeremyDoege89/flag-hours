@@ -92,4 +92,35 @@ class SmokeTest {
         waitFor("My total on this RO")
         rule.waitForIdle()
     }
+
+    @Test fun cachedReferenceAutoMatchesScannedStyleLine() {
+        finishSetup()
+        val app = rule.activity.application as com.jeremy.flaghours.FlagHoursApp
+        kotlinx.coroutines.runBlocking {
+            val key = "ford|f-150|2017"
+            app.database.olp().replaceVehicle(
+                com.jeremy.flaghours.data.db.OlpVehicle(key, "ford", "f-150", 2017, 3, 0),
+                listOf(
+                    com.jeremy.flaghours.data.db.LaborRowEntity(key, "", "radiator", "Radiator", "Cooling", 210, 180, 260, "high"),
+                    com.jeremy.flaghours.data.db.LaborRowEntity(key, "", "radiator-cap", "Radiator Cap", "Cooling", 10, 10, 20, "estimated"),
+                    com.jeremy.flaghours.data.db.LaborRowEntity(key, "", "brake-pads-front", "Brake Pads - Front", "Brakes", 100, 80, 130, "high"),
+                ),
+            )
+            app.database.olp().upsertAlias(com.jeremy.flaghours.data.db.OlpVehicleAlias("2017|ford|f 150", key, ""))
+        }
+        rule.onNodeWithText("Jobs").performClick()
+        waitFor("New RO")
+        rule.onNodeWithText("New RO", useUnmergedTree = true).performClick()
+        waitFor("RO number")
+        rule.onNode(hasText("RO number") and hasSetTextAction()).performTextInput("5001")
+        rule.onNode(hasText("Year") and hasSetTextAction()).performTextInput("2017")
+        rule.onNode(hasText("Make") and hasSetTextAction()).performTextInput("Ford")
+        rule.onNode(hasText("Model") and hasSetTextAction()).performScrollTo().performTextInput("F-150")
+        rule.onNode(hasText("Job description") and hasSetTextAction()).performScrollTo().performTextInput("radiator replacement")
+        rule.onNode(hasText("Flagged hours") and hasSetTextAction()).performScrollTo().performTextInput("2.0")
+        rule.onNodeWithText("Save RO").performScrollTo().performClick()
+        waitFor("RO 5001")
+        waitFor("Radiator · 1.8–2.6 h")
+        waitFor("In range")
+    }
 }
