@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -15,13 +17,36 @@ android {
         applicationId = "com.jeremy.flaghours"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.1.1"
+    }
+
+    // Release signing comes from a properties file kept outside the repo (never committed).
+    val signingFile = file(
+        providers.environmentVariable("FLAG_HOURS_SIGNING").orNull
+            ?: "${System.getProperty("user.home")}/keystores/flag-hours.properties",
+    )
+    val signing = signingFile.takeIf { it.exists() }?.let { f -> Properties().apply { f.inputStream().use { load(it) } } }
+
+    signingConfigs {
+        if (signing != null) {
+            create("release") {
+                storeFile = file(signing.getProperty("storeFile"))
+                storePassword = signing.getProperty("storePassword")
+                keyAlias = signing.getProperty("keyAlias")
+                keyPassword = signing.getProperty("keyPassword")
+                enableV2Signing = true
+                enableV3Signing = true
+            }
+        }
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            if (signing != null) signingConfig = signingConfigs.getByName("release")
         }
     }
     buildFeatures {

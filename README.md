@@ -46,19 +46,25 @@ the Room repository and lookup service (Robolectric), and Compose smoke tests th
 
 CI (GitHub Actions) runs the same command on every push and uploads the debug APK as the `flag-hours-debug-apk` artifact.
 
-## Sideload onto your phone
+## Install on your phone
 
-**Over USB (adb):**
-1. On the phone, open Settings > About phone and tap *Build number* 7 times. Then go to Settings > System > Developer options and turn on *USB debugging*.
-2. Plug in the phone and accept the "Allow USB debugging" prompt.
-3. Run `adb install -r app/build/outputs/apk/debug/app-debug.apk`
+**From GitHub (no cable):**
+1. If an older Flag Hours, or any test build with the same name, is on the phone, **uninstall it first**. Android refuses to
+   update an app that was signed with a different key and only says "package appears to be invalid".
+2. On the phone, open the latest release (signed in to GitHub) and download `flag-hours-<version>.apk`.
+3. Open it, allow installs from your browser or Files app when asked, then tap *Install*.
+4. Optional: check the file's SHA-256 against the one in the release notes.
 
-**Without a cable:**
-1. Download `app-debug.apk` on the phone, either from the latest GitHub release or from the `flag-hours-debug-apk` artifact of a CI run.
-2. Open it. Android asks you to allow installs from that app (your browser or Files). Allow it, then tap *Install*.
+**Over USB (adb):** turn on *USB debugging* (Settings > About phone > tap *Build number* 7 times, then
+Developer options), plug in, and run `adb install -r flag-hours-<version>.apk`.
 
-Debug builds from different machines are signed with different debug keys. If an install fails with a signature
-error, uninstall the old copy first (this deletes its data, so share a CSV backup first).
+## Release builds
+
+`./gradlew assembleRelease` produces a signed, R8-minified APK at `app/build/outputs/apk/release/app-release.apk`.
+Signing reads `~/keystores/flag-hours.properties` (or the path in `FLAG_HOURS_SIGNING`) with `storeFile`, `storePassword`,
+`keyAlias` and `keyPassword`. The keystore and properties are never committed. **Back up `~/keystores`**: without that key,
+future versions can't be installed as updates and users would have to uninstall (losing data) to upgrade.
+If the properties file is missing, the release build is produced unsigned.
 
 ## Project layout
 

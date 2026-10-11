@@ -41,6 +41,13 @@ Resume point for any session. Plan: [PLAN.md](PLAN.md). Gate: `./gradlew testDeb
 - README (build + sideload), CI green (runner's preinstalled SDK + platform 37.2), debug APK attached to the
   v0.1.0 GitHub pre-release.
 
+- v0.1.1: signed release build (key in ~/keystores, outside the repo), R8 minify + resource shrinking with keep
+  rules (Room, kotlinx.serialization, ML Kit, OkHttp), v2+v3 signatures, versionCode 2. Published as
+  flag-hours-0.1.1.apk, sha256 b1e96b5d634e3bd31bfc022ef04b8082b56ecbfdaadd83a669146f598fdfed05.
+  - v0.1.0's debug APK was valid (sha matched the local build; v2 signature OK; not testOnly; minSdk 26; zip OK; 4 ABIs).
+    The phone's "package appears to be invalid" is most likely a signature clash with the earlier test app that has the
+    same package name. Fix on the phone: uninstall the old app, then install.
+
 ## In progress
 - Nothing. Waiting on milestone 7 feedback.
 
@@ -48,7 +55,8 @@ Resume point for any session. Plan: [PLAN.md](PLAN.md). Gate: `./gradlew testDeb
 - Milestone 7: Jeremy daily-drives the app and reports issues.
 
 ## Known issues / decisions
-- Debug APK is ~69 MB (bundled ML Kit OCR model + extended icons, no R8 in debug). A signed, minified release build would be much smaller.
+- Release APK is ~46 MB, mostly the bundled ML Kit OCR native libs for 4 ABIs. Per-ABI splits could cut it to ~25 MB if needed.
+- R8 output is not exercised by the Robolectric tests (they run the debug build); first launch on a phone is the real check.
 - No Room migrations yet (schema v1); any entity change needs a migration before users have data.
 - Open Labor Project response shape was not verifiable from here (no key); the parser accepts `hours/low/high/confidence`
   at top level or under `data`/`results`/`range`, and common alternative key names. Adjust `VehicleApiParsers.parseOlp` once a real response is seen.
